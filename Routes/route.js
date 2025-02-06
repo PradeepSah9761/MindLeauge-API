@@ -1,5 +1,8 @@
 import express from 'express';
 import upload from '../upload.js';
+const app=express();
+app.use(upload.none());
+
 import {user_registration,addNewCoach} from '../Controllers/usersController.js';
 import {checkUserType} from '../Middleware/typeAuthMiddleware.js';
 

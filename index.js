@@ -10,8 +10,8 @@ const PORT= process.env.PORT || 3000;
 const app=express();
 config();
 app.use(express.urlencoded({ extended: true }));
-app.use("/api/",route);
 app.use(express.json());
+app.use("/api/",route);
 
 
 
