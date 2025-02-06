@@ -1,10 +1,12 @@
 import express from 'express';
 import upload from '../upload.js';
-import {manager_registration} from '../Controllers/TeamManagerController.js';
+import {manager_registration,StudentOrAlumni_registration} from '../Controllers/usersController.js';
+import {checkUserType} from '../Middleware/typeAuthMiddleware.js';
 
-const manager_route=express.Router();
+const route=express.Router();
 
-manager_route.post("/register",upload.single('logo'), manager_registration);
+route.post("/manager/register",upload.single('logo'), manager_registration);
+route.post("/:userType/register", checkUserType,StudentOrAlumni_registration);
 
 
-export default manager_route;
+export default route;

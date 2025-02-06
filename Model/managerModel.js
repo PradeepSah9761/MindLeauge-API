@@ -23,12 +23,12 @@ const managerSchema = new mongoose.Schema(
         email:
         {
             type: String,
-            requierd: true,
+            required: true,
             validate: {
                 validator: function (email) {
                   return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
                 },
-                message: props => `This is not a valid email! Please enter a valid email`
+                message: `This is not a valid email! Please enter a valid email`
               }
 
         },
@@ -46,11 +46,9 @@ const managerSchema = new mongoose.Schema(
         },
         logo:
         {
-            type: String,
-            required: true
-
-
-
+           filename:String,
+           filepath:String,
+         
         },
         boardSkin:
         {
@@ -77,7 +75,8 @@ const managerSchema = new mongoose.Schema(
         backupManager:
         {
             type: Object,
-            required: true,
+            required:true
+           
             
         },
         password:
@@ -94,4 +93,4 @@ const managerSchema = new mongoose.Schema(
     }, { timestamps: true }
 )
 const managerModel = mongoose.model("managerDetails", managerSchema);
-export default managerModel;
+export  {managerModel}

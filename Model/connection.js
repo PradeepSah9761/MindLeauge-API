@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-const URL="mongodb+srv://pradeep:pradeepsahdb@cluster0.yngar.mongodb.net/TeamManager?retryWrites=true&w=majority&appName=Cluster0"
-const connection=async()=>{
+const URL="mongodb+srv://pradeep:pradeepsahdb@cluster0.yngar.mongodb.net/MindLeague?retryWrites=true&w=majority&appName=Cluster0"
+const config=async()=>{
 
 try {
     await mongoose.connect(URL);
@@ -13,4 +13,4 @@ try {
 
 
 }
-export default connection;
+export default config;
