@@ -1,9 +1,9 @@
-import{ StudentAndAlumniModel}  from "../Model/StudentAndAlumniModel.js";
+import{userModel}  from "../Model/registerModel.js";
 
 
 // Middleware to check userType
 
-const validUserTypes=StudentAndAlumniModel.schema.path('userType').enumValues;
+const validUserTypes=userModel.schema.path('userType').enumValues;
 
 
 const checkUserType = (req, res, next) => {

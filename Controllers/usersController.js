@@ -1,64 +1,65 @@
-import {managerModel} from '../Model/managerModel.js';
-import {StudentAndAlumniModel} from '../Model/StudentAndAlumniModel.js';
+
+import { userModel } from '../Model/registerModel.js';
 import bcrypt from 'bcryptjs';
 import express from 'express';
-const app=express();
-app.use(express.urlencoded({extended:true}));
+const app = express();
+app.use(express.urlencoded({ extended: true }));
 
- 
-//Manager Registration
+// Student/Manager/Alumni Registration API
 
-const manager_registration = async (req, res) => {
+
+const user_registration = async(req,res)=>
+{
     try {
-        const { fullName, phoneNo, email, country, city, logo, boardSkin, schoolName, schoolAddress, schoolClub, payPalId, backupManager, password, confirmPassword } = req.body;
+        
+        const { fullName, phoneNo, email, country, city, logo, boardSkin, schoolName, schoolAddress, schoolClub, payPalId, backupManager, password, confirmPassword, firstName, lastName,  age,  fatherName, fatherEmail, fatherPhone, motherName, motherEmail, motherPhone  } = req.body;
+        const userType=req.params.userType;
 
-        
-        const existPerson = await managerModel
-        .findOne({ $or: [{ email }, { phoneNo }] });
-        
+        const existPerson = await userModel.findOne({ $or: [{ email }, { phoneNo }] });
+
         if (existPerson) {
             return res.status(400).json({ message: "User already exists wtih mobile no or email" })
         }
-        
-        // if (!fullName || !phoneNo || !email || !country || !city || !logo || !boardSkin || !schoolName || !schoolAddress || !payPalId || !backupManager || !schoolClub || !password || !confirmPassword) {
-        //     return res.status(400).json({ message: "All Fields are required" })
-        // }
         if (password != confirmPassword) {
-            return res.status(400).json({ message: "Please enter same password in confirm password field" })
-        }
+                        return res.status(400).json({ message: "Please enter same password in confirm password field" })
+                    }
 
-
-
-        const passwordFromUser = req.body.password;
-        const hashPassword = await bcrypt.hash(passwordFromUser, 12);
-
-
-
-
-
-        const newPerson = new managerModel(
-            {
-                fullName: fullName,
-                phoneNo: phoneNo,
-                email: email,
-                country: country,
-                city: city,
-                logo: {
-                    filename:req.file.filename,
-                    filepath:req.file.path,
-                },
-                boardSkin: boardSkin,
-                schoolName: schoolName,
-                schoolAddress: schoolAddress,
-                schoolClub: schoolClub,
-                payPalId: payPalId,
-                backupManager: backupManager,
-                password: hashPassword,
-
+                    const hashPassword = await bcrypt.hash(req.body.password, 10);
+        
+        const newCoach = new userModel(
+            {                   
+                                  userType: userType,
+                                fullName: fullName,
+                                phoneNo: phoneNo,
+                                email: email,
+                                country: country,
+                                city: city,
+                                logo: {
+                                    filename: req.file.filename,
+                                    filepath: req.file.path,
+                                },
+                                boardSkin: boardSkin,
+                                schoolName: schoolName,
+                                schoolAddress: schoolAddress,
+                                schoolClub: schoolClub,
+                                payPalId: payPalId,
+                                backupManager: backupManager,
+                                password: hashPassword,
+                                firstName: firstName,
+                                lastName: lastName,
+                                age: age,
+                                fatherName: fatherName,
+                                fatherEmail: fatherEmail,
+                                fatherPhone: fatherPhone,
+                                motherName: motherName,
+                                motherEmail: motherEmail,
+                                motherPhone: motherPhone,
+                
             }
         );
-        await newPerson.save();
-        res.status(201).json({ message: "Person Registration Successfully" });
+
+        await newCoach.save();
+        res.status(201).json({ message: "User Registration Successfully" });
     }
     catch (err) {
         if (err.name === 'ValidationError') {
@@ -66,69 +67,72 @@ const manager_registration = async (req, res) => {
             return res.status(400).json({ errors });
         }
         res.status(500).json({
-            message: "Internal Server Error"
+            message: err.message,
+            name:err.name
         })
     }
 }
 
 
-const StudentOrAlumni_registration =async (req, res) => {
-
-    try {
-                const { firstName, lastName, phoneNumber, email, age, country, city, fatherName, fatherEmail, fatherPhone, motherName, motherEmail, motherPhone, schoolName, clubName, payPalId, password, confirmPassword } = req.body;
-                const userType = req.params.userType;
-
-        
-        const existPerson = await StudentAndAlumniModel
-        .findOne({ $or: [{ email }, { phoneNumber }] });
-        if (existPerson) {
-            return res.status(400).json({ message: "User already exists wtih mobile no or email" })
-        }
-        
-        if (!firstName || !lastName || !phoneNumber || !email || !age || !country || !city  || !schoolName || !clubName || !payPalId || !password || !confirmPassword) {
-            return res.status(400).json({ message: "All Fields are required" })
-        }
-        if (password != confirmPassword) {
-            return res.status(400).json({ message: "Please enter same password in confirm password field" })
-        }
+//Add Coach API
 
 
-        const passwordFromUser = req.body.password;
-        const hashPassword = await bcrypt.hash(passwordFromUser, 12);
 
-
-        const newPerson = new StudentAndAlumniModel(
-            {
-                userType:userType,firstName, lastName, phoneNumber, email, age, country, city, fatherName, fatherEmail, fatherPhone, motherName, motherEmail, motherPhone, schoolName, clubName, payPalId, password: hashPassword
-
+const addNewCoach= async(req,res)=>
+    {
+        try {
+            
+            const { logo,fullName,email,password,yearOfExperience,payPalId,age,rating,phoneNo,country,city,commissions } = req.body;
+            const userType=req.params.userType;
+    
+            const existPerson = await userModel
+                .findOne({ $or: [{ email }, { phoneNo }] });
+    
+            if (existPerson) {
+                return res.status(400).json({ message: "Coach already exists wtih mobile no or email" })
             }
-        );
-        await newPerson.save();
-        res.status(201).json({ message: "Person Registration Successfully" });
-    }
-    catch (err) {
-        if (err.name === 'ValidationError') {
-            const errors = Object.values(err.errors).map(error => error.message);
-            return res.status(400).json({ errors });
+    
+            
+            const hashPassword = await bcrypt.hash(req.body.password, 10);
+    
+            const newCoach= new userModel(
+                {
+                    userType,
+                    fullName,
+            email,
+            password:hashPassword,
+            yearOfExperience,
+            payPalId,
+            age,
+            rating,
+            phoneNo,
+            country,
+            city,
+            commissions,
+            logo:
+            {
+                filename:req.file.filename,
+                pathname:req.file.path,
+            }
+    
+                }
+            );
+            await newCoach.save();
+            res.status(201).json({ message: "Coach Added Successfully" });
         }
-        res.status(500).json({
-            message: "Internal Server Error"
-        })
+        catch (err) {
+            if (err.name === 'ValidationError') {
+                const errors = Object.values(err.errors).map(error => error.message);
+                return res.status(400).json({ errors });
+            }
+            res.status(500).json({
+                message: err.message
+            })
+        }
     }
-}
 
 
-
-
-
-
-
-
-
-
-
-
-export { manager_registration, StudentOrAlumni_registration };
+export { user_registration,addNewCoach };
 
 
 
