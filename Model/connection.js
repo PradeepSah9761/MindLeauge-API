@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
-const URL="mongodb+srv://pradeep:pradeepsahdb@cluster0.yngar.mongodb.net/MindLeague?retryWrites=true&w=majority&appName=Cluster0"
+import dotenv from 'dotenv';
+dotenv.config();
 const config=async()=>{
 
 try {
-    await mongoose.connect(URL);
+    await mongoose.connect(process.env.MONGO_URI);
     console.log("Connection Succesfully");
     
 } catch (error) {
