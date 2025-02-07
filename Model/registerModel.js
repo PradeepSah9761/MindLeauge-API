@@ -171,6 +171,14 @@ const registerSchema = new mongoose.Schema(
         {
             type:Number
         },
+        otp: 
+        { 
+            type: String 
+        },
+        otpExpires: 
+        {
+             type: Date 
+            }
         
        
     },{timestamps:true}
