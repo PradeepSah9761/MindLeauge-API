@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import express from 'express';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import {transporter} from '../Config/emailConfig.js';
 dotenv.config();
 
 const app = express();
@@ -19,6 +20,7 @@ const user_registration = async (req, res) => {
 
         const { fullName, phoneNo, email, country, city, boardSkin, schoolName, schoolAddress, schoolClub, payPalId, backupManager, password, confirmPassword, firstName, lastName, age, fatherName, fatherEmail, fatherPhone, motherName, motherEmail, motherPhone } = req.body;
         const userType = req.params.userType;
+        const {logo}=req.file;
 
         if (!email || !phoneNo) {
             return res.status(400).json({ message: "Email and Phone Number are required" });
@@ -48,10 +50,7 @@ const user_registration = async (req, res) => {
             email,
             country,
             city,
-            logo: req.file ? {
-                filename: req.file.filename,
-                filepath: req.file.path
-            } : null,
+            logo,
             boardSkin,
             schoolName,
             schoolAddress,
@@ -116,10 +115,7 @@ const addNewCoach = async (req, res) => {
             country,
             city,
             commissions,
-            logo: req.file ? {
-                filename: req.file.filename,
-                filepath: req.file.path
-            } : null
+            logo,
         });
 
         await newCoach.save();
@@ -183,49 +179,13 @@ const loginViaPassword = async (req, res) => {
 
 
 
-// Nodemailer transporter
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-    },
-
-});
 
 // Generate OTP Function
 function generateOTP() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return Math.floor(Math.random()*1000000+1).toString(); //Genrate 6 Digit Code and convert into string
 }
 
-// Route: User Login (Send OTP)
-const loginViaOTP = async (req, res) => {
-    const { email, userType } = req.body;
-
-    const user = await userModel.findOne({ email, userType });
-    if (!user) return res.status(400).json({ message: "Email not associated with User Type" });
-
-    const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins expiry
-
-    user.otp = otp;
-    user.otpExpires = otpExpires;
-    await user.save();
-
-
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Your OTP Code",
-        text: `Your OTP is ${otp}. It expires in 5 minutes.`,
-    };
-
-    transporter.sendMail(mailOptions, (err, info) => {
-        if (err) return res.status(500).json({ message: err.message });
-        res.status(200).json({ message: "OTP sent to email" });
-    });
-};
 
 
 
@@ -274,14 +234,14 @@ const forgetPassword = async (req, res) => {
         user.otpExpires = otpExpires;
         await user.save();
 
-        const mailOptions = {
+        const mailOption = {
             from: process.env.EMAIL_USER,
             to: email,
             subject: "Password Reset OTP",
             text: `Your OTP for password reset is ${otp}. It expires in 2 minutes.`,
         };
 
-        transporter.sendMail(mailOptions, (err, info) => {
+        transporter.sendMail(mailOption, (err, info) => {
             if (err) return res.status(500).json({ message: "There is error in sending the email" });
             res.status(200).json({ message: "OTP sent to email for password reset" });
         });
@@ -328,4 +288,4 @@ const resetPassword = async (req, res) => {
 
 
 //exporting function by named 
-export { user_registration, addNewCoach, loginViaOTP, verifyOTP, forgetPassword, resetPassword, loginViaPassword };
+export { user_registration, addNewCoach, verifyOTP, forgetPassword, resetPassword, loginViaPassword };
