@@ -46,8 +46,9 @@ const registerSchema = new mongoose.Schema(
         },
         logo:
         {
-           filename:String,
-           filepath:String,
+        //    filename:String,
+        //    filepath:String,
+        type:String,
          
         },
         boardSkin:
@@ -178,9 +179,13 @@ const registerSchema = new mongoose.Schema(
         otpExpires: 
         {
              type: Date 
-            }
-        
-       
+       },
+    
+        isVerified:
+         {
+             type: Boolean,
+              default: false
+             },
     },{timestamps:true}
 );
 

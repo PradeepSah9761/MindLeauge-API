@@ -3,9 +3,13 @@
 import { userModel } from '../Model/registerModel.js';
 import bcrypt from 'bcryptjs';
 import express from 'express';
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import path from 'path';
 import {transporter} from '../Config/emailConfig.js';
+import {sendEmailWithSignUp} from '../Services/mailService.js';
+// import emailTemplate from '../views/emailTemplate.js';
+
+
 dotenv.config();
 
 const app = express();
@@ -14,26 +18,43 @@ app.use(express.json());
 
 
 
-// Student/Manager/Alumni Registration API
+    // Student/Manager/Alumni Registration API
+    
+
+import { fileURLToPath } from 'url';
+
+
+// Fix for __dirname in ES6
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+//  Student/Manager/Alumni Registration API
 const user_registration = async (req, res) => {
     try {
+        const { 
+            fullName, phoneNo, email, country, city, boardSkin, schoolName, schoolAddress, 
+            schoolClub, payPalId, backupManager, password, confirmPassword, firstName, 
+            lastName, age, fatherName, fatherEmail, fatherPhone, motherName, motherEmail, motherPhone 
+        } = req.body;
 
-        const { fullName, phoneNo, email, country, city, boardSkin, schoolName, schoolAddress, schoolClub, payPalId, backupManager, password, confirmPassword, firstName, lastName, age, fatherName, fatherEmail, fatherPhone, motherName, motherEmail, motherPhone } = req.body;
         const userType = req.params.userType;
-        const {logo}=req.file;
+        const logo = req.file ? req.file.filename : null; 
 
+        //  Validate Required Fields
         if (!email || !phoneNo) {
             return res.status(400).json({ message: "Email and Phone Number are required" });
         }
 
+        //  Check if User Already Exists
         const existPerson = await userModel.findOne({
-            $or: [{ email: email }, { phoneNo: phoneNo }]
+            $or: [{ email }, { phoneNo }]
         });
-
 
         if (existPerson) {
             return res.status(400).json({ message: "User already exists with this email or mobile number" });
         }
+
+        // Validate Password
         if (!password || !confirmPassword) {
             return res.status(400).json({ message: "Password and Confirm Password are required" });
         }
@@ -41,46 +62,43 @@ const user_registration = async (req, res) => {
             return res.status(400).json({ message: "Passwords do not match" });
         }
 
+        // Hash Password
         const hashPassword = await bcrypt.hash(password, 10);
 
+        // Create New User
         const newUser = new userModel({
-            userType,
-            fullName,
-            phoneNo,
-            email,
-            country,
-            city,
-            logo,
-            boardSkin,
-            schoolName,
-            schoolAddress,
-            schoolClub,
-            payPalId,
-            backupManager,
-            password: hashPassword,
-            firstName,
-            lastName,
-            age,
-            fatherName,
-            fatherEmail,
-            fatherPhone,
-            motherName,
-            motherEmail,
-            motherPhone
+            userType, fullName, phoneNo, email, country, city,  boardSkin, schoolName,
+            schoolAddress, schoolClub, payPalId, backupManager, password: hashPassword,
+            firstName, lastName, age, fatherName, fatherEmail, fatherPhone, motherName, motherEmail, motherPhone,logo
         });
 
-        await newUser.save();
-        res.status(201).json({ message: `${userType} Registration Successful` });
+        const user = await newUser.save();
+
+        //  Send Email with OTP
+        await sendEmailWithSignUp(user);
+       
+
+
+        //  Success Response
+        res.status(201).json({ 
+            message: `${userType} Registration Successful! OTP sent to your email. Please verify within 5 minutes.` 
+        });
+
     } catch (err) {
         res.status(500).json({ message: err.message, name: err.name });
     }
 };
+
+
+
 
 // Add Coach API
 const addNewCoach = async (req, res) => {
     try {
         const { fullName, email, password, yearOfExperience, payPalId, age, rating, phoneNo, country, city, commissions } = req.body;
         const userType = req.params.userType || req.body.userType;
+        const logo = req.file ? req.file.filename : null; 
+        
 
         if (!email || !phoneNo) {
             return res.status(400).json({ message: "Email and Phone Number are required" });
@@ -104,6 +122,7 @@ const addNewCoach = async (req, res) => {
 
         const newCoach = new userModel({
             userType,
+            logo,
             fullName,
             email,
             password: hashPassword,
@@ -115,11 +134,11 @@ const addNewCoach = async (req, res) => {
             country,
             city,
             commissions,
-            logo,
-        });
+        }); 
 
-        await newCoach.save();
-        res.status(201).json({ message: "Coach Added Successfully" });
+        const user=await newCoach.save();
+        await sendEmailWithSignUp(user);
+        res.status(201).json({ message: `Coach Added Successfully And Email is  send at ${user.email} Please login within 5 minute otherwise it will expired` });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -132,20 +151,30 @@ const addNewCoach = async (req, res) => {
 //User Login Via Password
 const loginViaPassword = async (req, res) => {
     try {
+        const verified= await userModel.findOne({email:req.body.email});
+        if(verified && !verified.isVerified)
+        {
+              res.send({status:"failed",message:"please verify the mail first then try to login "});
+              return res.redirect('/signin-otp');
+        }
+
+
+
         const { email, password, userType } = req.body;
         if (email && password && userType) {
             const validUserTypes = userModel.schema.path('userType').enumValues;
             if (validUserTypes.includes(userType)) {
-                console.log(validUserTypes);
-
+                
                 const user = await userModel.findOne({ email: email, userType: userType });
                 if (user) {
                     const isMatch = await bcrypt.compare(password, user.password);
                     if ((user.email === email) && isMatch) {
+                        
                         res.send({
                             status: "success",
                             message: "Login Successfull"
                         })
+                        
                     }
                     else {
                         res.status(400).json({ message: "Email Or Password doesn't match" })
@@ -188,6 +217,29 @@ function generateOTP() {
 
 
 
+//Resend The OTP
+
+const resendOTP=async(req,res)=>
+{
+
+    const {email}=req.body;
+    const user= await userModel.findOne({email});
+    if(!email)
+    {
+        res.status(400).json({
+            message:"Please enter a email address to proceed it "
+        })
+    }
+    if(!user)
+    {
+        res.send({status:"failed", message:"Email not found"})
+    }
+     await sendEmailWithSignUp(user);
+     res.send({status:"success" ,message:"Here is your new password , Now you can login within 5 minute"})
+
+
+}
+
 
 
 // Route: Verify OTP
@@ -198,7 +250,7 @@ const verifyOTP = async (req, res) => {
     }
 
     const user = await userModel.findOne({ email, userType });
-    if (!user) return res.status(400).json({ message: "User not found with User Type" });
+    if (!user) return res.status(400).json({ message: "Email not found with User Type" });
 
     if (user.otp !== otp || user.otpExpires < new Date()) {
         return res.status(400).json({ message: "Invalid or expired OTP" });
@@ -206,9 +258,11 @@ const verifyOTP = async (req, res) => {
 
     user.otp = null;
     user.otpExpires = null;
+    user.isVerified=true;
     await user.save();
 
-    res.status(200).json({ message: "OTP verified, login successful" });
+    res.status(200).json({ message: "OTP verified, Now you can login  " });
+
 };
 
 
@@ -288,4 +342,4 @@ const resetPassword = async (req, res) => {
 
 
 //exporting function by named 
-export { user_registration, addNewCoach, verifyOTP, forgetPassword, resetPassword, loginViaPassword };
+export { user_registration, addNewCoach, verifyOTP, forgetPassword, resetPassword, loginViaPassword,resendOTP };

@@ -1,4 +1,5 @@
 import{userModel}  from "../Model/registerModel.js";
+import path from 'path';
 
 
 // Middleware to check userType
