@@ -33,21 +33,21 @@ const sendEmailWithSignUp = async (user) => {
             html: htmlContent
         };
 
-        // Wrap `transporter.sendMail()` in a Promise to handle errors properly
+        
         return new Promise((resolve, reject) => {
             transporter.sendMail(mailOptions, (err, info) => {
                 if (err) {
                     console.error("Error sending email:", err);
-                    return reject(err);  // Reject promise on failure
+                    return reject(err);  
                 }
                 console.log(`Email sent successfully to ${user.email}`);
-                resolve(info);  // Resolve promise on success
+                resolve(info); 
             });
         });
 
     } catch (error) {
         console.error("Error in sendEmailWithSignUp:", error);
-        throw error;  // Ensure this error gets handled in the calling function
+        throw error;  
     }
 };
 

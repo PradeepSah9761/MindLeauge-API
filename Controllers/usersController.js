@@ -2,11 +2,13 @@
 
 import { userModel } from '../Model/registerModel.js';
 import bcrypt from 'bcryptjs';
-import express from 'express';
+import express, { application } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import {transporter} from '../Config/emailConfig.js';
 import {sendEmailWithSignUp} from '../Services/mailService.js';
+import puppeteer from 'puppeteer';
+import fs from 'fs';
 // import emailTemplate from '../views/emailTemplate.js';
 
 
@@ -14,13 +16,7 @@ dotenv.config();
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-
-
-    // Student/Manager/Alumni Registration API
-    
-
+app.use(express.json());    
 import { fileURLToPath } from 'url';
 
 
@@ -151,11 +147,15 @@ const addNewCoach = async (req, res) => {
 //User Login Via Password
 const loginViaPassword = async (req, res) => {
     try {
-        const verified= await userModel.findOne({email:req.body.email});
-        if(verified && !verified.isVerified)
+        const verifiedUser= await userModel.findOne({email:req.body.email});
+        if(verifiedUser && !verifiedUser.isVerified)
         {
-              res.send({status:"failed",message:"please verify the mail first then try to login "});
-              return res.redirect('/signin-otp');
+            //   res.send({status:"failed",message:"please verify the mail first then try to login "});
+            //   return res.redirect('/signin-otp');
+             //  Send Email with OTP
+             await sendEmailWithSignUp(verifiedUser);
+             res.send({staus:"success", message:"You can't login without verifying your email , I have sent an mail in your email account , use otp to verify your account then try to login "})
+
         }
 
 
@@ -341,5 +341,106 @@ const resetPassword = async (req, res) => {
 
 
 
+//To Genrate PDF
+
+const generatePDF = async (req, res) => {
+    let browser;
+    try {
+        const certificateFolder = path.join(__dirname, '../public/CertificatePDF');
+        
+
+        // Generate unique filename using timestamp
+        const timestamp = Date.now();
+        const pdfFileName = `certificate_${timestamp}.pdf`;
+        const pdfPath = path.join(certificateFolder, pdfFileName);
+
+        // Launch browser and setup page
+        browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        // Load HTML content
+        const htmlPath = path.join(__dirname, '../public/league_certificate.html');
+        await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle2' });
+
+        // Calculate content dimensions
+        const { contentWidth, contentHeight } = await page.evaluate(() => ({
+            contentWidth: document.documentElement.scrollWidth,
+            contentHeight: document.documentElement.scrollHeight
+        }));
+
+        // Set viewport to match content dimensions
+        await page.setViewport({
+            width: contentWidth,
+            height: contentHeight,
+            
+        });
+
+        // Generate PDF with exact content dimensions
+        await page.pdf({
+            path: pdfPath,
+            printBackground: true,
+            width: `${contentWidth}px`,
+            height: `${contentHeight}px`,
+            pageRanges: '1',
+            margin: {
+                top: '30px',
+                right: '0px',
+                bottom: '30px',
+                left: '0px'
+            }
+        });
+
+       
+        res.sendFile(pdfPath);
+
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        res.status(500).send('Error generating PDF certificate');
+    } finally {
+        if (browser) {
+            await browser.close();
+        }
+    }
+};
+
+//Download The PDF
+const downloadPDF=async(req,res)=>
+{
+
+    let browser;
+    try {
+         // Launch browser and setup page
+        //  browser = await puppeteer.launch();
+        //  const page = await browser.newPage();
+ 
+        const {filename}=req.params;
+        const certificateFolder = path.join(__dirname, '../public/CertificatePDF');
+
+        // Generate unique filename using timestamp
+        
+        const pdfPath = path.join(certificateFolder, filename);
+       
+        res.download(pdfPath, filename, (err) => {
+            if (err) {
+                console.error('Download error:', err);
+                
+            }
+        });
+
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        res.status(500).send('Error generating PDF certificate');
+    } finally {
+        if (browser) {
+            await browser.close();
+        }
+    }
+};
+
+   
+    
+
+
+
 //exporting function by named 
-export { user_registration, addNewCoach, verifyOTP, forgetPassword, resetPassword, loginViaPassword,resendOTP };
+export { user_registration, addNewCoach, verifyOTP, forgetPassword, resetPassword, loginViaPassword,resendOTP,generatePDF,downloadPDF };

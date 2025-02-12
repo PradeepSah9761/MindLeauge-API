@@ -3,7 +3,7 @@ import upload from '../upload.js';
 const app=express();
 app.use(upload.none());
 
-import {user_registration,addNewCoach, verifyOTP, forgetPassword,resetPassword, loginViaPassword, resendOTP} from '../Controllers/usersController.js';
+import {user_registration,addNewCoach, verifyOTP, forgetPassword,resetPassword, loginViaPassword, resendOTP,generatePDF, downloadPDF} from '../Controllers/usersController.js';
 import {checkUserType} from '../Middleware/typeAuthMiddleware.js';
 
 const route=express.Router();
@@ -15,6 +15,8 @@ route.post("/forget-password",forgetPassword);
 route.post("/reset-password",resetPassword);
 route.post("/login-password",loginViaPassword);
 route.post("/resend-otp",resendOTP);
+route.get("/generate-pdf",generatePDF);
+route.get("/download-pdf/:filename",downloadPDF);
 
 
 
