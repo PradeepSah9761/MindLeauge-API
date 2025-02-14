@@ -81,15 +81,15 @@ const reminderEmail = async () => {
 //Function To delete unverified user
 const unVerified = async () => {
     try {
-        const unVerifiedUser = await userModel.find({ isVerified: false });
-        unVerifiedUser.deleteMany(
+       const unVerifiedUser= userModel.deleteMany(
             {
                 isVerified: false,
             }
         )
+        console.log(` ${unVerifiedUser.deleteCount} user deleted who is unverified from your database `)
 
     } catch (err) {
-        console.log("There is an error to delete unverified user")
+        console.log("There is an error to delete unverified user",err)
     }
 }
 
@@ -155,3 +155,4 @@ cron.schedule('*/10 * * * *',deleteExpiredOTPs);// Delete the OTP and OPTExpires
 cron.schedule('0 8 * * *',reminderEmail)//Every Day at 8 AM
 cron.schedule('0 0 * * *',deletePDF)//Midnight Daily
 cron.schedule('0 0 * * 0',BackupDB) //Backup every Sunday
+cron.schedule('0 0 1 * *',unVerified) //will run at midnight 12 AM on the 1st day of Every Month
