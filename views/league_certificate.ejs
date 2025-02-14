@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate</title>
+    <link href='https://fonts.googleapis.com/css?family=Briem Hand' rel='stylesheet'>
+
+</head>
+
+<body
+    style="width: 100%; height: 100vh; margin: 0; font-family: Montserrat; overflow: hidden; background-color: #080D10; display: flex; align-items: center; justify-content: center;">
+
+
+    <div id="pdf-content"
+        style="width: 100%; height: 100vh; margin: auto; background: #080D10; position: relative; padding: 1rem; box-sizing: border-box;">
+        <div class="border"
+            style="width: 100%; height: auto; box-sizing: border-box; padding: .5rem; position: relative; text-align: center; z-index: 2;">
+
+
+            <div style="
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 105%;
+            background-image: url('<%= imagePaths.base64LineBorder %>'); 
+            background-repeat: no-repeat; 
+            background-position: center; 
+            background-size: 100% 100%;
+        "></div>
+
+
+            <div>
+                <img src="<%= imagePaths.designBorderTop %>" alt=""
+                    style="width: 178px; height: 40px; object-fit: contain; margin: 0 auto; margin-top: 1.5rem;">
+                <h2
+                    style="padding: 0; font-size: 1.75rem; font-weight: 600; margin: 0; font-family: Abhaya Libre; line-height: 2; color: #fff;">
+                    CERTIFICATE</h2>
+                <img src="<%= imagePaths.designBorder %>" alt=""
+                    style="width: 178px; height: 40px; object-fit: contain; margin: 0 auto;">
+            </div>
+            <div style="margin-top: 1rem;">
+                <h5 style="font-size: 18px; line-height: 26px; color: #fff; font-weight: 500; margin: 0;">
+                    <%= schoolName %>
+                </h5>
+            </div>
+            <div style="margin-top: .5rem; padding: 0 1rem;">
+                <p style="font-size: 14px; font-weight: 400; line-height: 26px; color: #fff;">
+                    This certificate is proudly presented to <span
+                        style="font-weight: 600; font-size: 1.5rem; color: #DAB561; font-family: Briem Hand;">
+                        <%= fullName %>
+                    </span>
+                    for achieving First Place at the 2024 Annual School Chess Championships. Your exceptional skill,
+                    dedication, and sportsmanship have earned you this prestigious honor.
+                    Congratulations on this outstanding accomplishment and success in this year's tournament!
+                </p>
+            </div>
+            <table style="width: 80%; margin: auto; margin-top: 2rem; padding-bottom: 1rem;">
+                <tbody>
+                    <tr>
+                        <td style="width: 30%; text-align: center;">
+                            <img src="<%= imagePaths.signature %>"
+                                style="width: 142px; height: 49px; border-bottom: 1px solid #fff;" alt="">
+                            <p style="font-weight: 400; font-size: 16px; color: #fff;">President's Signature</p>
+                        </td>
+                        <td style="width: 30%; text-align: center;">
+                            <img src="<%= imagePaths.logo %>" style="width: 82px; height: 89px; object-fit: contain;"
+                                alt="Mindleague">
+                            <p
+                                style="font-weight: 600; font-size: 14px; line-height: 19px; background: linear-gradient(180deg, #F5CA83 -2.99%, #D69A3C 24.18%, #A5712A 41.64%, #D69A3C 62.99%, #F5CA83 92.57%);
+                                -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; font-family: Verdana, Geneva, Tahoma, sans-serif;">
+                                Mindleague</p>
+                        </td>
+                        <td style="width: 30%; text-align: center;">
+                            <div style="color: white; font-size: 16px;">
+                                <%= new Date().toLocaleDateString() %>
+                            </div>
+                            <p style="border-top: 1px solid #fff; font-weight: 400; font-size: 16px; color: #fff;">Date
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+
+        <div style="background-image: url('<%= imagePaths.base64ChessBg %>'); 
+            background-size: contain; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 1;">
+        </div>
+
+
+        <div
+            style="width: 100%; height: auto; background: linear-gradient(90deg, rgba(8, 13, 16, 0.655) 0%, rgba(8, 13, 16, 0.622) 35%, rgba(8, 13, 16, 0.518) 100%); position: absolute; top: 0; left: 0; z-index: -1;">
+        </div>
+    </div>
+
+</body>
+
+</html>

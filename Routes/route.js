@@ -15,7 +15,7 @@ route.post("/forget-password",forgetPassword);
 route.post("/reset-password",resetPassword);
 route.post("/login-password",loginViaPassword);
 route.post("/resend-otp",resendOTP);
-route.get("/generate-pdf",generatePDF);
+route.get("/generate-pdf/:fullName/:schoolName",generatePDF);
 route.get("/download-pdf/:filename",downloadPDF);
 
 

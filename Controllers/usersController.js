@@ -10,15 +10,12 @@ import {sendEmailWithSignUp} from '../Services/mailService.js';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 // import emailTemplate from '../views/emailTemplate.js';
-
-
+import ejs from 'ejs';
 dotenv.config();
-
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());    
 import { fileURLToPath } from 'url';
-
 
 // Fix for __dirname in ES6
 const __filename = fileURLToPath(import.meta.url);
@@ -150,8 +147,7 @@ const loginViaPassword = async (req, res) => {
         const verifiedUser= await userModel.findOne({email:req.body.email});
         if(verifiedUser && !verifiedUser.isVerified)
         {
-            //   res.send({status:"failed",message:"please verify the mail first then try to login "});
-            //   return res.redirect('/signin-otp');
+            
              //  Send Email with OTP
              await sendEmailWithSignUp(verifiedUser);
              res.send({staus:"success", message:"You can't login without verifying your email , I have sent an mail in your email account , use otp to verify your account then try to login "})
@@ -341,26 +337,62 @@ const resetPassword = async (req, res) => {
 
 
 
+
+
+// Convert Image to base64
+
+function imageToBase64(filePath)
+{
+    try{
+const data=fs.readFileSync(filePath);
+const base64=data.toString('base64');
+return `data:image/png;base64,${base64}`
+    }
+    catch(err)
+    {
+        console.log("there is error in converting image into base64");
+    }
+}
+
 //To Genrate PDF
 
 const generatePDF = async (req, res) => {
     let browser;
     try {
+        const { fullName, schoolName } = req.params;
         const certificateFolder = path.join(__dirname, '../public/CertificatePDF');
-        
 
         // Generate unique filename using timestamp
         const timestamp = Date.now();
         const pdfFileName = `certificate_${timestamp}.pdf`;
         const pdfPath = path.join(certificateFolder, pdfFileName);
 
+        // Resolve image paths with file:// protocol
+        const imagePaths = {
+            base64LineBorder:imageToBase64(path.join(__dirname,'../public/images/line-border-3.png')),
+            designBorderTop:`file://${path.join(__dirname,'../public/images/design-border-top.png')}`,
+            designBorder:`file://${path.join(__dirname,'../public/images/design-border.png')}`,
+            base64ChessBg:imageToBase64(path.join(__dirname,'../public/images/chess_bg.png')),
+            signature:`file://${path.join(__dirname,'../public/images/signature.png')}`,
+            logo:`file://${path.join(__dirname,'../public/images/logo.png')}`,
+        };
+
+        // Render EJS template with resolved paths
+        const htmlContent = await ejs.renderFile(path.join(__dirname, '../views/league_certificate.ejs'), {
+            fullName,
+            schoolName,
+            imagePaths
+        });
+
+        // Save the rendered HTML to a temporary file
+        const tempHtmlPath = path.join(__dirname, '../public/temp.html');
+        fs.writeFileSync(tempHtmlPath, htmlContent);
+
+        
+
         // Launch browser and setup page
         browser = await puppeteer.launch();
         const page = await browser.newPage();
-
-        // Load HTML content
-        const htmlPath = path.join(__dirname, '../public/league_certificate.html');
-        await page.goto(`file://${htmlPath}`, { waitUntil: 'networkidle2' });
 
         // Calculate content dimensions
         const { contentWidth, contentHeight } = await page.evaluate(() => ({
@@ -368,29 +400,25 @@ const generatePDF = async (req, res) => {
             contentHeight: document.documentElement.scrollHeight
         }));
 
-        // Set viewport to match content dimensions
-        await page.setViewport({
-            width: contentWidth,
-            height: contentHeight,
-            
-        });
+        // Load the HTML file using the file:// protocol
+        await page.goto(`file://${tempHtmlPath}`, { waitUntil: 'networkidle0' });
 
-        // Generate PDF with exact content dimensions
+        // Generate PDF
         await page.pdf({
             path: pdfPath,
             printBackground: true,
-            width: `${contentWidth}px`,
-            height: `${contentHeight}px`,
+            width: contentWidth,
+            height: contentHeight,
             pageRanges: '1',
             margin: {
-                top: '30px',
+                top: '0px',
                 right: '0px',
-                bottom: '30px',
+                bottom: '0px',
                 left: '0px'
             }
         });
 
-       
+        // Send the generated PDF as a response
         res.sendFile(pdfPath);
 
     } catch (error) {
@@ -403,27 +431,29 @@ const generatePDF = async (req, res) => {
     }
 };
 
+
+
+
+
+
+
+
 //Download The PDF
 const downloadPDF=async(req,res)=>
 {
 
     let browser;
     try {
-         // Launch browser and setup page
-        //  browser = await puppeteer.launch();
-        //  const page = await browser.newPage();
- 
+        
         const {filename}=req.params;
         const certificateFolder = path.join(__dirname, '../public/CertificatePDF');
 
         // Generate unique filename using timestamp
         
         const pdfPath = path.join(certificateFolder, filename);
-       
         res.download(pdfPath, filename, (err) => {
             if (err) {
                 console.error('Download error:', err);
-                
             }
         });
 
@@ -436,10 +466,6 @@ const downloadPDF=async(req,res)=>
         }
     }
 };
-
-   
-    
-
 
 
 //exporting function by named 
