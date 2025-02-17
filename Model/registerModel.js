@@ -26,7 +26,7 @@ const registerSchema = new mongoose.Schema(
            
             validate: {
                 validator: function (email) {
-                  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+                  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/.test(email);
                 },
                 message: `This is not a valid email! Please enter a valid email`
               }

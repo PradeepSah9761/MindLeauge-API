@@ -33,6 +33,11 @@ const user_registration = async (req, res) => {
         const userType = req.params.userType;
         const logo = req.file ? req.file.filename : null; 
 
+          //  Validate Required Fields
+          if (!email || !phoneNo) {
+            return res.status(400).json({ message: "Email and Phone Number are required" });
+        }
+
         //To Validate Email
         if(!validator.isEmail(email))
         {
@@ -57,10 +62,7 @@ const user_registration = async (req, res) => {
 
         }
 
-        //  Validate Required Fields
-        if (!email || !phoneNo) {
-            return res.status(400).json({ message: "Email and Phone Number are required" });
-        }
+      
 
         //  Check if User Already Exists
         const existPerson = await userModel.findOne({
