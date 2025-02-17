@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import ejs from 'ejs';
 
+
 const __filename = fileURLToPath(import.meta.url); 
 const __dirname = dirname(__filename);              
 
@@ -18,6 +19,9 @@ const sendEmailWithSignUp = async (user) => {
         const otp = generateOTP();
         user.otp = otp;
         user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+        // user.otpExpires=moment().add(5,"minutes").toDate();
+
+
         await user.save();
 
         const templatePath = path.join(__dirname, '../views', 'emailTemplate.ejs');

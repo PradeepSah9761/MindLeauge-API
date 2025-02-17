@@ -4,7 +4,6 @@ import path from 'path';
 import { userModel } from '../Model/registerModel.js';
 import { sendEmailWithSignUp} from '../Services/mailService.js';
 import config from '../Model/connection.js';
-import express from 'express'
 import dotenv from 'dotenv';
 dotenv.config()
 

@@ -1,16 +1,16 @@
-
-
 import { userModel } from '../Model/registerModel.js';
 import bcrypt from 'bcryptjs';
-import express, { application } from 'express';
+import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import {transporter} from '../Config/emailConfig.js';
 import {sendEmailWithSignUp} from '../Services/mailService.js';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
-// import emailTemplate from '../views/emailTemplate.js';
+import jwt from 'jsonwebtoken';
+import moment from 'moment';
 import ejs from 'ejs';
+import validator from 'validator';
 dotenv.config();
 const app = express();
 app.use(express.urlencoded({ extended: true }));
@@ -32,6 +32,30 @@ const user_registration = async (req, res) => {
 
         const userType = req.params.userType;
         const logo = req.file ? req.file.filename : null; 
+
+        //To Validate Email
+        if(!validator.isEmail(email))
+        {
+            return res.status(401).json({message:" Entered Invalid Email "})
+        }
+        
+
+        // To Validate MobileNo
+        if(!validator.isMobilePhone(phoneNo,'any'))
+        {
+          return   res.status(401).json({message:"Invalid Mobile No"})
+        }
+
+        //To Validate Strong Password
+        if(!validator.isStrongPassword(password,{minLength: 8,
+            minNumbers: 1}))
+        {
+           return res.status(401).json({
+                message:"Password must be 8 characters long and contain at least 1 number"
+                
+            })
+
+        }
 
         //  Validate Required Fields
         if (!email || !phoneNo) {
@@ -93,6 +117,30 @@ const addNewCoach = async (req, res) => {
         const logo = req.file ? req.file.filename : null; 
         
 
+        //To Validate Email
+        if(!validator.isEmail(email))
+            {
+               return res.status(401).json({message:" Entered Invalid Email "})
+            }
+            
+    
+            // To Validate MobileNo
+            if(!validator.isMobilePhone(phoneNo,'any'))
+            {
+                return res.status(401).json({message:"Invalid Mobile No"})
+            }
+    
+            //To Validate Strong Password
+            // if(!validator.isStrongPassword(password,{minLength:8,minNumber:1}))
+            // {
+            //     return res.status(401).json({
+            //         message:"Password must be 8 characters long and contain at least 1 number"
+                    
+            //     })
+    
+            // }
+    
+
         if (!email || !phoneNo) {
             return res.status(400).json({ message: "Email and Phone Number are required" });
         }
@@ -131,9 +179,9 @@ const addNewCoach = async (req, res) => {
 
         const user=await newCoach.save();
         await sendEmailWithSignUp(user);
-        res.status(201).json({ message: `Coach Added Successfully And Email is  send at ${user.email} Please login within 5 minute otherwise it will expired` });
+        res.status(201).json({ message: `Coach Added Successfully And Email is  send at ${user.email} Please login within 5 minute ` });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+       return res.status(500).json({ message: err.message });
     }
 };
 
@@ -150,7 +198,7 @@ const loginViaPassword = async (req, res) => {
             
              //  Send Email with OTP
              await sendEmailWithSignUp(verifiedUser);
-             res.send({staus:"success", message:"You can't login without verifying your email , I have sent an mail in your email account , use otp to verify your account then try to login "})
+            return  res.send({staus:"failed", message:"You can't login without verifying your email , I have sent an mail in your email account , use otp to verify your account then try to login "})
 
         }
 
@@ -166,36 +214,39 @@ const loginViaPassword = async (req, res) => {
                     const isMatch = await bcrypt.compare(password, user.password);
                     if ((user.email === email) && isMatch) {
                         
+                        //Generate JWT Token
+                        const token = jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:"1h"});
                         res.send({
                             status: "success",
-                            message: "Login Successfull"
+                            message: "Login Successfull",
+                            token:token
                         })
                         
                     }
                     else {
-                        res.status(400).json({ message: "Email Or Password doesn't match" })
+                       return  res.status(400).json({ message: "Email Or Password doesn't match" })
                     }
 
                 }
                 else {
-                    res.status(400).json({ message: "Email and  userType is not associated with each other please enter a valid email with valid usertype" })
+                   return  res.status(400).json({ message: "Email and  userType is not associated with each other please enter a valid email with valid usertype" })
                 }
             }
             else {
-                res.send({ status: "failed", message: "please select a valid user type for ['student','manager','coach','alumni'" })
+               return res.send({ status: "failed", message: "please select a valid user type for ['student','manager','coach','alumni'" })
             }
 
 
         }
         else {
-            res.status(400).json({ message: "Email , Password and userType all are required" })
+           return res.status(400).json({ message: "Email , Password and userType all are required" })
         }
 
     }
 
 
     catch (error) {
-        res.status(500).json({ message: error.message });
+       return res.status(500).json({ message: error.message });
     }
 }
 
@@ -222,16 +273,16 @@ const resendOTP=async(req,res)=>
     const user= await userModel.findOne({email});
     if(!email)
     {
-        res.status(400).json({
+        return res.status(400).json({
             message:"Please enter a email address to proceed it "
         })
     }
     if(!user)
     {
-        res.send({status:"failed", message:"Email not found"})
+       return res.send({status:"failed", message:"Email not found"})
     }
      await sendEmailWithSignUp(user);
-     res.send({status:"success" ,message:"Here is your new password , Now you can login within 5 minute"})
+     res.send({status:"success" ,message:"Here is your new OTP , Please verify it and  Now you can login within 5 minute"})
 
 
 }
@@ -242,7 +293,7 @@ const resendOTP=async(req,res)=>
 const verifyOTP = async (req, res) => {
     const { email, otp, userType } = req.body;
     if (!email || !otp || !userType) {
-        res.status(400).json({ message: "All Fields are required" });
+       return res.status(400).json({ message: "All Fields are required" });
     }
 
     const user = await userModel.findOne({ email, userType });
@@ -270,15 +321,24 @@ const forgetPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
+        if(!validator.isEmail(email))
+        {
+            res.status(401).json({
+                message:"Invalid Password"
+            })
+        }
+
         if (!email) {
-            res.send({ status: "failed", message: "Please enter the email, It's required" });
+           return  res.send({ status: "failed", message: "Please enter the email, It's required" });
         }
 
         const user = await userModel.findOne({ email });
         if (!user) return res.status(400).json({ message: "Email not found" });
 
         const otp = generateOTP();
-        const otpExpires = new Date(Date.now() + 2 * 60 * 1000); // OTP valid for 2 mins
+        // const otpExpires = new Date(Date.now() + 2 * 60 * 1000); // OTP valid for 2 mins
+        const otpExpires=moment().add(2,"minutes").toDate();
+
 
         user.otp = otp;
         user.otpExpires = otpExpires;
@@ -288,7 +348,7 @@ const forgetPassword = async (req, res) => {
             from: process.env.EMAIL_USER,
             to: email,
             subject: "Password Reset OTP",
-            text: `Your OTP for password reset is ${otp}. It expires in 2 minutes.`,
+            text: `Your OTP for password reset is ${otp}. will expires in 2 minutes. At ${moment(otpExpires).format("YYYY-MM-DD HH:mm:ss")}`,
         };
 
         transporter.sendMail(mailOption, (err, info) => {
@@ -296,7 +356,7 @@ const forgetPassword = async (req, res) => {
             res.status(200).json({ message: "OTP sent to email for password reset" });
         });
     } catch (err) {
-        res.status(500).json({ message: "The Internal Server Error" });
+       return res.status(500).json({ message: "The Internal Server Error" });
     }
 };
 
